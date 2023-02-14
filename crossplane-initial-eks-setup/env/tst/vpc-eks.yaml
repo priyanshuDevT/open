@@ -1,0 +1,14 @@
+apiVersion: prodready.vpc/v1alpha1
+kind: VPCClaim
+metadata:
+  name: travelspirit-tst
+  labels:
+    vpc-owner: cem 
+spec:
+  id: travelspirit-tst
+  compositionSelector:
+    matchLabels:
+      provider: aws
+      vpc: eks
+  parameters:
+    region: #eu-central-1         #region you want to select

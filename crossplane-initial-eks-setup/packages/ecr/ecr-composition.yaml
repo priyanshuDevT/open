@@ -1,0 +1,73 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: ecr-aws
+  labels:
+    provider: aws
+    ecr: travelspirit
+spec:
+  compositeTypeRef:
+    apiVersion: prodready.ecr/v1alpha1
+    kind: CompositeECR
+  writeConnectionSecretsToNamespace: crossplane-system
+  patchSets:
+  - name: metadata
+    patches:
+    - fromFieldPath: metadata.labels
+  resources:
+  - name: ecr-repo
+    base:
+      apiVersion: ecr.aws.crossplane.io/v1beta1
+      kind: Repository
+      metadata:
+        name:           #change the value in env/$stage/ecr.yaml
+      spec:
+        forProvider:
+          region:       #change the value in env/$stage/ecr.yaml
+          imageScanningConfiguration:
+            scanOnPush: true
+          imageTagMutability: IMMUTABLE
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+
+  - name: ecr-lifecycle-policy
+    base:
+      apiVersion: ecr.aws.crossplane.io/v1alpha1
+      kind: LifecyclePolicy
+      metadata:
+        name:           #change the value in env/$stage/ecr.yaml
+      spec:
+        forProvider:
+          region:       #change the value in env/$stage/ecr.yaml
+          repositoryNameRef:
+            name:           #change the value in env/$stage/ecr.yaml
+          lifecyclePolicyText: |
+            {
+              "rules": [
+                {
+                  "rulePriority": 1,
+                  "description": "Keep Latest 5 images",
+                  "selection":
+                  {
+                    "tagStatus": "tagged",
+                    "tagPrefixList": ["travelspirit" ],
+                    "countType": "imageCountMoreThan",  
+                    "countNumber": 5    
+                  },
+                  "action":
+                  {
+                    "type":"expire"
+                  }
+                }
+              ]
+            }
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.repositoryNameRef.name

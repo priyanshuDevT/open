@@ -1,0 +1,21 @@
+apiVersion: prodready.cluster/v1alpha1
+kind: ClusterClaim
+metadata:
+  name: travelspirit-tst
+  labels:
+    cluster-owner: cem 
+spec:
+  id: travelspirit-tst
+  compositionSelector:
+    matchLabels:
+      provider: aws
+      cluster: eks
+  parameters:
+    region: #eu-central-1         #region you want to select
+    version: "1.24"
+    nodeSize: medium
+    minNodeCount: 1
+    # ARNs should come from the earlier created network resources and roles.
+    roleArn: arn:aws:iam::245306132255:role/travelspirit-tst-controlplane-role
+    nodeRole: arn:aws:iam::245306132255:role/travelspirit-tst-nodegroup-role
+    

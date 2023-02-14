@@ -1,0 +1,46 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: compositeargos.prodready.argo
+spec:
+  connectionSecretKeys:
+  - kubeconfig
+  defaultCompositionRef:
+    name: argo-aws
+  group: prodready.argo
+  names:
+    kind: CompositeArgo
+    plural: compositeargos
+  claimNames:
+    kind: ArgoClaim
+    plural: argoclaims
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              id:
+                type: string
+                description: ID of this vpc that other objects will use to refer to it.
+              parameters:
+                type: object
+                properties:
+                  gitOpsRepo:
+                    description: The repository with GitOps manifests used by Argo CD
+                    type: string
+                    default: "https://github.com/travelspirit-infra/travelspirit"
+                  repopass:
+                    description: The Password of repository which will be connected Argo CD
+                    type: string
+                required:
+                - gitOpsRepo
+                - repopass
+            required:
+            - id
+            - parameters

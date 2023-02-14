@@ -1,0 +1,15 @@
+apiVersion: prodready.argo/v1alpha1
+kind: ArgoClaim
+metadata:
+  name: travelspirit-tst
+  labels:
+    helm-owner: cem 
+spec:
+  id: travelspirit-tst
+  compositionSelector:
+    matchLabels:
+      provider: aws
+      argo: eks
+  parameters:
+    gitOpsRepo: #https://github.com/travelspirit-infra/travelspirit      #Repo you want to connect
+    repopass: #ghp_abcd2023                                 #Git Personal Access Token

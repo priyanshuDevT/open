@@ -1,0 +1,11 @@
+{
+  "appName": "demo-app",
+  "userGivenName": "demo-app",
+  "destNamespace": "default",
+  "destServer": "https://kubernetes.default.svc",
+  "srcPath": "apps/demo-app/overlays/management",
+  "srcRepoURL": "https://github.com/travelspirit-infra/management.git",
+  "srcTargetRevision": "",
+  "labels": null,
+  "annotations": null
+}

@@ -1,0 +1,397 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: vpc-aws
+  labels:
+    provider: aws
+    vpc: eks
+spec:
+  compositeTypeRef:
+    apiVersion: prodready.vpc/v1alpha1
+    kind: CompositeVPC
+  writeConnectionSecretsToNamespace: crossplane-system
+  patchSets:
+  - name: metadata
+    patches:
+    - fromFieldPath: metadata.labels
+  resources:
+  - name: iamrole-controlplane
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: Role
+      spec:
+        forProvider:
+          assumeRolePolicyDocument: |
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                  {
+                      "Effect": "Allow",
+                      "Principal": {
+                          "Service": [
+                              "eks.amazonaws.com"
+                          ]
+                      },
+                      "Action": [
+                          "sts:AssumeRole"
+                      ]
+                  }
+              ]
+            }
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-controlplane-role"
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.labels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-controlplane-role"
+  - name: iamrole-nodegroup
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: Role
+      spec:
+        forProvider:
+          assumeRolePolicyDocument: |
+            {
+              "Version": "2012-10-17",
+              "Statement": [
+                  {
+                      "Effect": "Allow",
+                      "Principal": {
+                          "Service": [
+                              "ec2.amazonaws.com"
+                          ]
+                      },
+                      "Action": [
+                          "sts:AssumeRole"
+                      ]
+                  }
+              ]
+            }
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-nodegroup-role"
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.labels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-nodegroup-role"
+  - name: iamattachment-controlplane-role
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: RolePolicyAttachment
+      spec:
+        forProvider:
+          policyArn: arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+          roleNameSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-controlplane-role"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.roleNameSelector.matchLabels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-controlplane-role"
+  - name: iamattachment-service
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: RolePolicyAttachment
+      spec:
+        forProvider:
+          policyArn: arn:aws:iam::aws:policy/AmazonEKSServicePolicy
+          roleNameSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-service"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.roleNameSelector.matchLabels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-controlplane-role"
+  - name: iamattachment-worker
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: RolePolicyAttachment
+      spec:
+        forProvider:
+          policyArn: arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+          roleNameSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-worker"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.roleNameSelector.matchLabels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-nodegroup-role"
+  - name: iamattachment-cni
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: RolePolicyAttachment
+      spec:
+        forProvider:
+          policyArn: arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+          roleNameSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-cni"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.roleNameSelector.matchLabels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-nodegroup-role"
+  - name: iamattachment-registry
+    base:
+      apiVersion: iam.aws.crossplane.io/v1beta1
+      kind: RolePolicyAttachment
+      spec:
+        forProvider:
+          policyArn: arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+          roleNameSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-registry"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.forProvider.roleNameSelector.matchLabels.role
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-nodegroup-role"
+  - name: vpc
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: VPC
+      metadata:
+        name:           #change the value in env/$stage/vpc-eks.yaml
+      spec:
+        forProvider:
+          region:       #change the value in env/$stage/vpc-eks.yaml
+          cidrBlock: 192.168.0.0/16
+          enableDnsSupport: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+  - name: sg
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: SecurityGroup
+      metadata:
+        name:         #change the value in env/$stage/vpc-eks.yaml
+      spec:
+        forProvider:
+          region:     #change the value in env/$stage/vpc-eks.yaml
+          description: vpc communication with worker nodes
+          groupName: travelspirit-catalog
+          vpcIdSelector:
+            matchControllerRef: true
+          egress:
+          - fromPort: 0
+            toPort: 0
+            ipProtocol: "-1"
+            ipRanges:
+            - cidrIp: "0.0.0.0/0"
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+  - name: subnet-1a
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: Subnet
+      metadata:
+        name:                #change the value in env/$stage/vpc-eks.yaml
+        labels:
+          zone: a
+          access: public
+      spec:
+        forProvider:
+          region:            #change the value in env/$stage/vpc-eks.yaml
+          availabilityZone:  #change the value in env/$stage/vpc-eks.yaml
+          cidrBlock: 192.168.0.0/24
+          vpcIdSelector:
+            matchControllerRef: true
+          mapPublicIPOnLaunch: true
+          tags:
+          - key: kubernetes.io/role/elb
+            value: "1"
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-1a"
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.availabilityZone
+      transforms: 
+        - type: string
+          string:
+            fmt: "%sa"
+
+  - name: subnet-1b
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: Subnet
+      metadata:
+        name:                  #change the value in env/$stage/vpc-eks.yaml 
+        labels:
+          zone: b
+          access: public
+      spec:
+        forProvider:
+          region:              #change the value in env/$stage/vpc-eks.yaml
+          availabilityZone:    #change the value in env/$stage/vpc-eks.yaml       
+          cidrBlock: 192.168.1.0/24
+          vpcIdSelector:
+            matchControllerRef: true
+          mapPublicIPOnLaunch: true
+          tags:
+          - key: kubernetes.io/role/elb
+            value: "1"
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-1b"
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.availabilityZone
+      transforms: 
+        - type: string
+          string:
+            fmt: "%sb"
+  - name: subnet-1c
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: Subnet
+      metadata:
+        name:                #change the value in env/$stage/vpc-eks.yaml
+        labels:
+          zone: c
+          access: public
+      spec:
+        forProvider:
+          region:            #change the value in env/$stage/vpc-eks.yaml
+          availabilityZone:  #change the value in env/$stage/vpc-eks.yaml 
+          cidrBlock: 192.168.2.0/24
+          vpcIdSelector:
+            matchControllerRef: true
+          mapPublicIPOnLaunch: true
+          tags:
+          - key: kubernetes.io/role/elb
+            value: "1"
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-1c"
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.availabilityZone
+      transforms: 
+        - type: string
+          string:
+            fmt: "%sc"
+  - name: gateway
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: InternetGateway
+      metadata:
+        name:      #change the value in env/$stage/vpc-eks.yaml
+      spec:
+        forProvider:
+          region:  #change the value in env/$stage/vpc-eks.yaml
+          vpcIdSelector:
+            matchControllerRef: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region
+  - name: routetable
+    base:
+      apiVersion: ec2.aws.crossplane.io/v1beta1
+      kind: RouteTable
+      metadata:
+        name:      #change the value in env/$stage/vpc-eks.yaml
+      spec:
+        forProvider:
+          region:  #change the value in env/$stage/vpc-eks.yaml
+          vpcIdSelector:
+            matchControllerRef: true
+          routes:
+            - destinationCidrBlock: 0.0.0.0/0
+              gatewayIdSelector:
+                matchControllerRef: true
+          associations:
+            - subnetIdSelector:
+                matchControllerRef: true
+                matchLabels:
+                  zone: a
+                  access: public
+            - subnetIdSelector:
+                matchControllerRef: true
+                matchLabels:
+                  zone: b
+                  access: public
+            - subnetIdSelector:
+                matchControllerRef: true
+                matchLabels:
+                  zone: c
+                  access: public
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+    - fromFieldPath: spec.parameters.region
+      toFieldPath: spec.forProvider.region

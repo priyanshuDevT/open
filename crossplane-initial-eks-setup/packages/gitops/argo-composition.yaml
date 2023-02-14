@@ -1,0 +1,127 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: argo-aws
+  labels:
+    provider: aws
+    argo: eks
+spec:
+  compositeTypeRef:
+    apiVersion: prodready.argo/v1alpha1
+    kind: CompositeArgo
+  writeConnectionSecretsToNamespace: crossplane-system
+  patchSets:
+  - name: metadata
+    patches:
+    - fromFieldPath: metadata.labels
+  resources:
+
+  - name: argocd
+    base:
+      apiVersion: helm.crossplane.io/v1beta1
+      kind: Release
+      spec:
+        rollbackLimit: 3
+        forProvider:
+          namespace: argocd
+          chart:
+            name: argo-cd
+            repository: https://argoproj.github.io/argo-helm
+            version: "5.19.14"
+          set:
+          - name: server.extraArgs
+            value: "{--insecure}"
+          - name: controller.args.appResyncPeriod
+            value: "30"
+          - name: configs.secret.argocdServerAdminPassword
+            value: "$2a$10$AWSvRJv2PKk0/Dh0cmN4SegVLzX/nlfpsXFrmzlmtgktSy4U4dWXm"
+          - name: configs.secret.argocdServerAdminPasswordMtime
+            value: "2021-11-08T15:04:05Z"
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-argocd"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.providerConfigRef.name
+
+  - name: argocd-demo-app
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: argoproj.io/v1alpha1
+            kind: Application
+            metadata:
+              name: demo-app
+              namespace: argocd
+              finalizers:
+                - resources-finalizer.argocd.argoproj.io
+            spec:
+              project: default
+              source:
+                targetRevision: feature/PLTF-20
+                path: demo-app/helm-chart
+              destination:
+                server: https://kubernetes.default.svc
+                namespace: php
+              syncPolicy:
+                syncOptions:
+                  - CreateNamespace=true
+                automated:
+                  selfHeal: true
+                  prune: true
+                  allowEmpty: true
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-argocd-app-dev"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.providerConfigRef.name
+    - fromFieldPath: spec.parameters.gitOpsRepo
+      toFieldPath: spec.forProvider.manifest.spec.source.repoURL
+
+
+  - name: demo-repo-https-connect
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: Secret
+            type: Opaque
+            metadata:
+              name: application-repo-travelspirit
+              namespace: argocd
+              labels:
+                argocd.argoproj.io/secret-type: repository
+            stringData:
+              name: Application-repo-travelspirit
+              password:                   #change the value in env/$stage/argo-eks.yaml
+              project: default
+              type: git
+              url:                        #change the value in env/$stage/argo-eks.yaml
+              username: travelspirit-infra
+    patches:
+    - fromFieldPath: spec.id
+      toFieldPath: metadata.name
+      transforms:
+        - type: string
+          string:
+            fmt: "%s-demo-https-repo"
+    - fromFieldPath: spec.id
+      toFieldPath: spec.providerConfigRef.name
+    - fromFieldPath: spec.parameters.gitOpsRepo
+      toFieldPath: spec.forProvider.manifest.stringData.url
+    - fromFieldPath: spec.parameters.repopass
+      toFieldPath: spec.forProvider.manifest.stringData.password
+   

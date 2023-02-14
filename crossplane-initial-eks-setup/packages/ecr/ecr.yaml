@@ -1,0 +1,14 @@
+apiVersion: prodready.ecr/v1alpha1
+kind: ECRClaim
+metadata:
+  name: travelspirit
+  labels:
+    ecr-owner: cem 
+spec:
+  id: travelspirit
+  compositionSelector:
+    matchLabels:
+      provider: aws
+      ecr: travelspirit
+  parameters:
+    region: #ap-southeast-1        #region you want to select
