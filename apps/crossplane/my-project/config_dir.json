@@ -1,0 +1,1 @@
+{"appName":"crossplane","userGivenName":"crossplane","destNamespace":"default","destServer":"https://kubernetes.default.svc","srcPath":"apps/crossplane","srcRepoURL":"https://github.com/priyanshuDevT/open.git","srcTargetRevision":"","labels":null,"exclude":"","include":""}
