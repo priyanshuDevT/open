@@ -140,7 +140,6 @@ First set the git token and repo
 export GIT_TOKEN=[$TOKEN] # replace with token
 export GIT_REPO=https://github.com/travelspirit-infra/management.git
 ```
-
 Then execute the bootstrap command
 ```
 argocd-autopilot repo bootstrap --recover
