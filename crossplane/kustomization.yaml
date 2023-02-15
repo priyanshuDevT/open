@@ -2,4 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - ./crossplane-helm.yaml
-  - ./provider-aws.yaml
+  - ./providers/provider-aws.yaml
+  - ./providers/provider-config-aws.yaml
+  - ./providers/provider-helm.yaml
+  - ./providers/provider-kubernetes.yaml
