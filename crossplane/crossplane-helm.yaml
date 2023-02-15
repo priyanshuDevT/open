@@ -3,6 +3,7 @@ kind: Application
 metadata:
   name: crossplane
 spec:
+  project: management
   source:
     chart: crossplane
     repoURL: https://charts.crossplane.io/stable
