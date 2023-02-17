@@ -29,11 +29,13 @@ spec:
           - name: AVP_TYPE
             value: vault
           - name: VAULT_ADDR
-            value: "http://localhost:8200"
+            value: "https://travelspirit-vault-test-public-vault-cf02b1cf.8a42d776.z1.hashicorp.cloud:8200"
           - name: AVP_AUTH_TYPE
-            value: token
-          - name: VAULT_TOKEN
-            value: "hvs.49lrQIJiyIo1bMal17ZjSi4B"
+            value: approle
+          - name: AVP_ROLE_ID
+            value: 5cd56f92-a6ee-c982-c017-702748d73311
+          - name: AVP_SECRET_ID
+            value: ba991972-ed4c-7e1b-ccd1-80077e8399e4
         volumeMounts:
           # Important: Mount tools into $PATH
           - name: custom-tools
