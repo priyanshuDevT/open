@@ -11,6 +11,7 @@ spec:
           emptyDir: {}
       initContainers:
       - name: download-tools
+        image: alpine/helm:3.8.0
         env:
           - name: AVP_VERSION
             value: 1.11.0
