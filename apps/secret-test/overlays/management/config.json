@@ -1,0 +1,11 @@
+{
+  "appName": "secret",
+  "userGivenName": "secret",
+  "destNamespace": "default",
+  "destServer": "https://kubernetes.default.svc",
+  "srcPath": "apps/secret-test/overlays/management",
+  "srcRepoURL": "https://github.com/priyanshuDevT/open.git",
+  "srcTargetRevision": "",
+  "labels": null,
+  "annotations": null
+}
