@@ -29,7 +29,7 @@ spec:
           - name: AVP_TYPE
             value: vault
           - name: VAULT_ADDR
-            value: http://localhost:8200
+            value: "http://localhost:8200"
           - name: AVP_AUTH_TYPE
             value: token
           - name: VAULT_TOKEN
