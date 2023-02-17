@@ -11,6 +11,9 @@ configMapGenerator:
         key: git_username
         name: autopilot-secret
   name: argocd-cm
+patchesStrategicMerge:
+- argocd-repo-server.yaml
+- cmp-plugin.yaml
 kind: Kustomization
 namespace: argocd
 resources:
