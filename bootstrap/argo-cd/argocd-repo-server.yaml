@@ -33,7 +33,7 @@ spec:
           - name: AVP_AUTH_TYPE
             value: token
           - name: VAULT_TOKEN
-            value: hvs.49lrQIJiyIo1bMal17ZjSi4B
+            value: "hvs.49lrQIJiyIo1bMal17ZjSi4B"
         volumeMounts:
           # Important: Mount tools into $PATH
           - name: custom-tools
